@@ -6,7 +6,6 @@ app = Flask(__name__)
 
 def clean_phone_number(phone_number):
     if phone_number:
-        # Убираем все символы, кроме цифр
         cleaned_number = re.sub(r'\D', '', phone_number)
         return cleaned_number
     else:
@@ -17,6 +16,7 @@ def clean_phone_number(phone_number):
 def webhook():
     try:
         phone_number = request.form.get('phone')
+        app.logger.info("Received phone number: %s", phone_number)  # Логирование полученного номера телефона
         if not phone_number:
             app.logger.error("Phone number not found in the request")
             return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
