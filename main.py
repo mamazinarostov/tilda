@@ -1,38 +1,8 @@
-import os
 from flask import Flask, request, jsonify
 import requests
 import re
 
 app = Flask(__name__)
-
-# Конфигурация с использованием переданных значений
-INSTANCE_ID = '1103960944'
-API_TOKEN = '557a5f7c1173434086486f390c6ae2290b77f31ba6ca4656aa'
-
-MESSAGE = """🍣 ПОДАРКИ ЗА ОТЗЫВЫ ✍️
-
-Здравствуйте, мы очень сильно благодарим вас за то, что выбираете "Мама Зина"! Хотим предложить вам вкуснейший ролл в подарок при следующем заказе. Для этого нужно оставить отзывы на трёх площадках:
-
-1. 2ГИС
-
-Mamazina
-https://2gis.ru/rostov/geo/70000001062267615
-
-2. ЯНДЕКС
-
-https://yandex.ru/profile/26936047750
-
-3. ГРУППА ВКОНТАКТЕ
-
-https://vk.com/topic-207395908_48873636
-
-Отзыв желательно писать с фото, но можно и без 😇
-После написания присылайте нам подтверждение в виде скриншота и получайте от нас подарок 🎁
-
-P.S. Так же информируем, что у нас появились "Премиум-роллы" от шеф-повара. Ждём с нетерпением обратной связи! 🥰
-
-С Уважением, Мама Зина!
-"""
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -45,24 +15,18 @@ def webhook():
         if request.content_type == 'application/json':
             data = request.get_json()
             app.logger.info("Received JSON data: %s", data)
-
+            
             if isinstance(data, dict) and data.get('test') == 'test':
                 app.logger.info("Received test request from Tilda")
                 return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
 
-            if isinstance(data, list):
-                phone_numbers = [item.get('Phone') for item in data if isinstance(item, dict) and 'Phone' in item]
-            elif isinstance(data, dict):
-                phone_numbers = [data.get('Phone')]
-            else:
-                phone_numbers = []
-
-            app.logger.info("Extracted phone numbers from JSON: %s", phone_numbers)
-            if not phone_numbers or not phone_numbers[0]:
+            # Проверка наличия ключа "Phone" в JSON данных
+            phone_numbers = [item.get('Phone') for item in data if isinstance(item, dict) and 'Phone' in item]
+            if not phone_numbers:
                 app.logger.error("Phone number not found in the JSON data")
                 return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
 
-            phone_number = phone_numbers[0]
+            phone_number = phone_numbers[0]  # Берем первый номер телефона из списка
         elif request.content_type == 'application/x-www-form-urlencoded':
             phone_number = request.form.get('Phone')
             app.logger.info("Received form data: %s", request.form)
@@ -101,16 +65,37 @@ def webhook():
             app.logger.error("Unsupported Content-Type: %s", request.content_type)
             return jsonify({'status': 'error', 'message': 'Unsupported Content-Type'}), 415
 
-        app.logger.info("Extracted phone number: %s", phone_number)
+        app.logger.info("Received phone number: %s", phone_number)
 
+        # Очистка номера телефона от нечисловых символов
         cleaned_number = re.sub(r'\D', '', phone_number)
-        app.logger.info("Cleaned phone number: %s", cleaned_number)
 
-        if not cleaned_number.startswith('7') or len(cleaned_number) != 11:
-            app.logger.error("Invalid phone number format: %s", cleaned_number)
-            return jsonify({'status': 'error', 'message': 'Invalid phone number format'}), 400
+        # Отправка сообщения
+        message = """🍣 ПОДАРКИ ЗА ОТЗЫВЫ ✍️
 
-        send_whatsapp_message(cleaned_number, MESSAGE)
+Здравствуйте, мы очень сильно благодарим вас за то, что выбираете "Мама Зина"! Хотим предложить вам вкуснейший ролл в подарок при следующем заказе. Для этого нужно оставить отзывы на трёх площадках:
+
+1. 2ГИС
+
+Mamazina
+https://2gis.ru/rostov/geo/70000001062267615
+
+2. ЯНДЕКС
+
+https://yandex.ru/profile/26936047750
+
+3. ГРУППА ВКОНТАКТЕ
+
+https://vk.com/topic-207395908_48873636
+
+Отзыв желательно писать с фото, но можно и без 😇
+После написания присылайте нам подтверждение в виде скриншота и получайте от нас подарок 🎁
+
+P.S. Так же информируем, что у нас появились "Премиум-роллы" от шеф-повара. Ждём с нетерпением обратной связи! 🥰
+
+С Уважением, Мама Зина!
+"""
+        send_whatsapp_message(cleaned_number, message)
         return jsonify({'status': 'success', 'message': 'Message sent successfully'}), 200
 
     except Exception as e:
@@ -118,9 +103,9 @@ def webhook():
         return jsonify({'status': 'error', 'message': 'Internal Server Error'}), 500
 
 def send_whatsapp_message(phone_number, message):
-    url = f"https://api.green-api.com/waInstance{INSTANCE_ID}/sendMessage/{API_TOKEN}"
+    url = "https://api.green-api.com/waInstance1103960944/sendMessage/557a5f7c1173434086486f390c6ae2290b77f31ba6ca4656aa"
     headers = {
-        "Authorization": f"Bearer {API_TOKEN}",
+        "Authorization": "Bearer 557a5f7c1173434086486f390c6ae2290b77f31ba6ca4656aa",
         "Content-Type": "application/json"
     }
     chat_id = f"{phone_number}@c.us"
