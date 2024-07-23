@@ -11,28 +11,37 @@ def webhook():
         app.logger.info("Request data: %s", request.data)
 
         # Проверка на тестовый запрос от Tilda
-        if request.is_json:
+        if request.content_type == 'application/json':
             data = request.get_json()
             if isinstance(data, dict) and data.get('test') == 'test':
                 app.logger.info("Received test request from Tilda")
                 return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
-        
-        # Извлечение JSON данных для обычных запросов
-        data = request.get_json()
-        if not data:
-            app.logger.error("No JSON data found in the request")
-            return jsonify({'status': 'error', 'message': 'Invalid JSON data'}), 400
+            
+            if not data:
+                app.logger.error("No JSON data found in the request")
+                return jsonify({'status': 'error', 'message': 'Invalid JSON data'}), 400
 
-        app.logger.info("Received JSON data: %s", data)
+            app.logger.info("Received JSON data: %s", data)
 
-        # Проверка наличия ключа "Phone" в каждом элементе массива JSON
-        phone_numbers = [item.get('Phone') for item in data if isinstance(item, dict) and 'Phone' in item]
+            # Проверка наличия ключа "Phone" в каждом элементе массива JSON
+            phone_numbers = [item.get('Phone') for item in data if isinstance(item, dict) and 'Phone' in item]
 
-        if not phone_numbers:
-            app.logger.error("Phone number not found in the JSON data")
-            return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
+            if not phone_numbers:
+                app.logger.error("Phone number not found in the JSON data")
+                return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
 
-        phone_number = phone_numbers[0]  # Берем первый номер телефона из списка
+            phone_number = phone_numbers[0]  # Берем первый номер телефона из списка
+        else:
+            # Обработка формы с типом application/x-www-form-urlencoded
+            phone_number = request.form.get('Phone')
+            if request.form.get('test') == 'test':
+                app.logger.info("Received test request from Tilda")
+                return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
+
+            if not phone_number:
+                app.logger.error("Phone number not found in the form data")
+                return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
+
         app.logger.info("Received phone number: %s", phone_number)
 
         # Очистка номера телефона от нечисловых символов
@@ -42,9 +51,6 @@ def webhook():
         message = "Ваше сообщение"
         send_whatsapp_message(cleaned_number, message)
         return jsonify({'status': 'success', 'message': 'Message sent successfully'}), 200
-
-        # Возврат ошибки, если ни одно условие не выполнено
-        return jsonify({'status': 'error', 'message': 'Invalid request format'}), 400
 
     except Exception as e:
         app.logger.error("An error occurred: %s", e, exc_info=True)
