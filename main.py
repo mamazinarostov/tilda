@@ -31,9 +31,9 @@ def webhook():
         return jsonify({'status': 'error', 'message': 'Internal Server Error'}), 500
 
 def send_whatsapp_message(phone_number, message):
-    url = "https://api.green-api.com/waInstanceYOUR_INSTANCE_ID/sendMessage/YOUR_API_TOKEN"
+    url = "https://api.green-api.com/waInstance1103960944/sendMessage/557a5f7c1173434086486f390c6ae2290b77f31ba6ca4656aa"
     headers = {
-        "Authorization": "Bearer YOUR_API_TOKEN",
+        "Authorization": "Bearer 557a5f7c1173434086486f390c6ae2290b77f31ba6ca4656aa",
         "Content-Type": "application/json"
     }
     chat_id = f"{phone_number}@c.us"
