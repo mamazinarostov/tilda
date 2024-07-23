@@ -10,30 +10,26 @@ def webhook():
         app.logger.info("Request headers: %s", request.headers)
         app.logger.info("Request data: %s", request.data)
 
-        # Проверка на тестовый запрос от Tilda
+        phone_number = None
+
         if request.content_type == 'application/json':
             data = request.get_json()
+            app.logger.info("Received JSON data: %s", data)
+            
             if isinstance(data, dict) and data.get('test') == 'test':
                 app.logger.info("Received test request from Tilda")
                 return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
-            
-            if not data:
-                app.logger.error("No JSON data found in the request")
-                return jsonify({'status': 'error', 'message': 'Invalid JSON data'}), 400
 
-            app.logger.info("Received JSON data: %s", data)
-
-            # Проверка наличия ключа "Phone" в каждом элементе массива JSON
+            # Проверка наличия ключа "Phone" в JSON данных
             phone_numbers = [item.get('Phone') for item in data if isinstance(item, dict) and 'Phone' in item]
-
             if not phone_numbers:
                 app.logger.error("Phone number not found in the JSON data")
                 return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
 
             phone_number = phone_numbers[0]  # Берем первый номер телефона из списка
-        else:
-            # Обработка формы с типом application/x-www-form-urlencoded
+        elif request.content_type == 'application/x-www-form-urlencoded':
             phone_number = request.form.get('Phone')
+            app.logger.info("Received form data: %s", request.form)
             if request.form.get('test') == 'test':
                 app.logger.info("Received test request from Tilda")
                 return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
@@ -41,6 +37,9 @@ def webhook():
             if not phone_number:
                 app.logger.error("Phone number not found in the form data")
                 return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
+        else:
+            app.logger.error("Unsupported Content-Type: %s", request.content_type)
+            return jsonify({'status': 'error', 'message': 'Unsupported Content-Type'}), 415
 
         app.logger.info("Received phone number: %s", phone_number)
 
