@@ -10,19 +10,23 @@ def webhook():
         app.logger.info("Request headers: %s", request.headers)
         app.logger.info("Request form data: %s", request.form)
         app.logger.info("Request data: %s", request.data)
-
+        
         # Обработка тестового запроса от Tilda
-        if request.form.get('test') == 'test':
+        if 'test' in request.form and request.form.get('test') == 'test':
             app.logger.info("Received test request from Tilda")
             return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
-
+        
+        # Получение данных формы
         phone_number = request.form.get('phone')
         app.logger.info("Received phone number: %s", phone_number)
         if not phone_number:
             app.logger.error("Phone number not found in the request")
             return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
         
+        # Очистка номера телефона
         cleaned_number = re.sub(r'\D', '', phone_number)
+        
+        # Отправка сообщения через WhatsApp
         message = "Ваше сообщение"
         send_whatsapp_message(cleaned_number, message)
         return jsonify({'status': 'success', 'message': 'Message sent successfully'}), 200
