@@ -11,6 +11,11 @@ def webhook():
         app.logger.info("Request headers: %s", request.headers)
         app.logger.info("Request data: %s", request.data)
         
+        # Обработка тестового запроса от Tilda
+        if request.form.get('test') == 'test':
+            app.logger.info("Received test request from Tilda")
+            return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
+        
         # Извлечение JSON данных
         data = request.get_json()
         if not data:
