@@ -13,13 +13,20 @@ def webhook():
         
         # Извлечение JSON данных
         data = request.get_json()
+        if not data:
+            app.logger.error("No JSON data found in the request")
+            return jsonify({'status': 'error', 'message': 'Invalid JSON data'}), 400
+        
         app.logger.info("Received JSON data: %s", data)
         
-        if not data or 'Phone' not in data[0]:
-            app.logger.error("Phone number not found in the request")
+        # Проверка наличия ключа "Phone" в каждом элементе массива JSON
+        phone_numbers = [item.get('Phone') for item in data if 'Phone' in item]
+        
+        if not phone_numbers:
+            app.logger.error("Phone number not found in the JSON data")
             return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
 
-        phone_number = data[0]['Phone']
+        phone_number = phone_numbers[0]  # Берем первый номер телефона из списка
         app.logger.info("Received phone number: %s", phone_number)
         
         # Очистка номера телефона от нечисловых символов
