@@ -7,26 +7,25 @@ app = Flask(__name__)
 @app.route('/webhook', methods=['POST'])
 def webhook():
     try:
+        # Логирование всех данных запроса
         app.logger.info("Request headers: %s", request.headers)
-        app.logger.info("Request form data: %s", request.form)
         app.logger.info("Request data: %s", request.data)
         
-        # Обработка тестового запроса от Tilda
-        if 'test' in request.form and request.form.get('test') == 'test':
-            app.logger.info("Received test request from Tilda")
-            return jsonify({'status': 'success', 'message': 'Test request received successfully'}), 200
+        # Извлечение JSON данных
+        data = request.get_json()
+        app.logger.info("Received JSON data: %s", data)
         
-        # Получение данных формы
-        phone_number = request.form.get('phone')
-        app.logger.info("Received phone number: %s", phone_number)
-        if not phone_number:
+        if not data or 'Phone' not in data[0]:
             app.logger.error("Phone number not found in the request")
             return jsonify({'status': 'error', 'message': 'Phone number is required'}), 400
+
+        phone_number = data[0]['Phone']
+        app.logger.info("Received phone number: %s", phone_number)
         
-        # Очистка номера телефона
+        # Очистка номера телефона от нечисловых символов
         cleaned_number = re.sub(r'\D', '', phone_number)
         
-        # Отправка сообщения через WhatsApp
+        # Отправка сообщения
         message = "Ваше сообщение"
         send_whatsapp_message(cleaned_number, message)
         return jsonify({'status': 'success', 'message': 'Message sent successfully'}), 200
