@@ -9,7 +9,7 @@ def webhook():
     try:
         app.logger.info("Request headers: %s", request.headers)
         app.logger.info("Request data: %s", request.data)
-        
+
         # Проверка на тестовый запрос от Tilda
         if request.is_json:
             data = request.get_json()
@@ -26,7 +26,7 @@ def webhook():
         app.logger.info("Received JSON data: %s", data)
 
         # Проверка наличия ключа "Phone" в каждом элементе массива JSON
-        phone_numbers = [item.get('Phone') for item in data if 'Phone' in item]
+        phone_numbers = [item.get('Phone') for item in data if isinstance(item, dict) and 'Phone' in item]
 
         if not phone_numbers:
             app.logger.error("Phone number not found in the JSON data")
@@ -42,6 +42,9 @@ def webhook():
         message = "Ваше сообщение"
         send_whatsapp_message(cleaned_number, message)
         return jsonify({'status': 'success', 'message': 'Message sent successfully'}), 200
+
+        # Возврат ошибки, если ни одно условие не выполнено
+        return jsonify({'status': 'error', 'message': 'Invalid request format'}), 400
 
     except Exception as e:
         app.logger.error("An error occurred: %s", e, exc_info=True)
